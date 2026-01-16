@@ -273,7 +273,15 @@ public class XorPlus8 implements Filter {
                 fingerprints[j++] = (byte) f;
             }
         }
-        bitCount = fingerprints.length * 8 + rank.getBitCount();
+        bitCount = calculateBitCount(fingerprints, rank);
+    }
+
+    /**
+     * Calculate the total bit count including fingerprints and rank data structure.
+     * Each fingerprint uses BITS_PER_FINGERPRINT bits.
+     */
+    private static int calculateBitCount(byte[] fingerprints, Rank9 rank) {
+        return fingerprints.length * BITS_PER_FINGERPRINT + rank.getBitCount();
     }
 
     /**
@@ -403,7 +411,7 @@ public class XorPlus8 implements Filter {
         byte[] fingerprints = new byte[fingerprintLength];
         buffer.get(fingerprints);
         Rank9 rank = Rank9.readFrom(buffer);
-        int bitCount = fingerprintLength * BITS_PER_FINGERPRINT + rank.getBitCount();
+        int bitCount = calculateBitCount(fingerprints, rank);
         return new XorPlus8(size, arrayLength, blockLength, seed, fingerprints, bitCount, rank);
     }
 

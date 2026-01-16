@@ -24,6 +24,8 @@ import org.junit.Test;
 
 public class TestFilterSerialization {
 
+    private static final int BUFFER_OVERHEAD_BYTES = 1000; // Extra space for metadata and overhead
+
     /**
      * Generic test method that tests serialization/deserialization for any filter.
      * 
@@ -32,8 +34,9 @@ public class TestFilterSerialization {
      * @param keys the keys that were added to the filter
      */
     private <F extends Filter> void testFilterSerialization(F original, Function<ByteBuffer, F> readFrom, long[] keys) {
-        // Serialize
-        ByteBuffer buffer = ByteBuffer.allocate(10000000);
+        // Allocate buffer based on filter size plus overhead
+        int bufferSize = (int) (original.getBitCount() / 8 + BUFFER_OVERHEAD_BYTES);
+        ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
         original.writeTo(buffer);
         
         // Deserialize
