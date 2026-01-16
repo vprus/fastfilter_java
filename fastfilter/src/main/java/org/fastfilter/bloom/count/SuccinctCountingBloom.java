@@ -1,5 +1,7 @@
 package org.fastfilter.bloom.count;
 
+import java.nio.ByteBuffer;
+
 import org.fastfilter.Filter;
 import org.fastfilter.utils.Hash;
 
@@ -338,6 +340,12 @@ public class SuccinctCountingBloom implements Filter {
             return buff.toString();
         }
 
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        // TODO: Implement serialization for BitField
+        throw new UnsupportedOperationException("Serialization not yet implemented for SuccinctCountingBloom");
     }
 
 }

@@ -1,5 +1,7 @@
 package org.fastfilter.bloom;
 
+import java.nio.ByteBuffer;
+
 import org.fastfilter.Filter;
 import org.fastfilter.utils.Hash;
 
@@ -70,6 +72,42 @@ public class Bloom implements Filter {
             a += b;
         }
         return true;
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(k);
+        buffer.putLong(bits);
+        buffer.putLong(seed);
+        buffer.putInt(arraySize);
+        for (long value : data) {
+            buffer.putLong(value);
+        }
+    }
+
+    public static Bloom readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int k = buffer.getInt();
+        long bits = buffer.getLong();
+        long seed = buffer.getLong();
+        int arraySize = buffer.getInt();
+        long[] data = new long[arraySize];
+        for (int i = 0; i < arraySize; i++) {
+            data[i] = buffer.getLong();
+        }
+        return new Bloom(k, bits, seed, arraySize, data);
+    }
+
+    private Bloom(int k, long bits, long seed, int arraySize, long[] data) {
+        this.k = k;
+        this.bits = bits;
+        this.seed = seed;
+        this.arraySize = arraySize;
+        this.data = data;
     }
 
 }

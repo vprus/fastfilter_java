@@ -1,5 +1,6 @@
 package org.fastfilter.xor;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.fastfilter.Filter;
@@ -259,6 +260,39 @@ public class XorBinaryFuse8 implements Filter {
 
     private byte fingerprint(long hash) {
         return (byte) hash;
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(segmentCount);
+        buffer.putInt(segmentLength);
+        buffer.putLong(seed);
+        buffer.put(fingerprints);
+    }
+
+    public static XorBinaryFuse8 readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int segmentCount = buffer.getInt();
+        int segmentLength = buffer.getInt();
+        long seed = buffer.getLong();
+        int arrayLength = (segmentCount + ARITY - 1) * segmentLength;
+        byte[] fingerprints = new byte[arrayLength];
+        buffer.get(fingerprints);
+        return new XorBinaryFuse8(segmentCount, segmentLength, seed, fingerprints);
+    }
+
+    private XorBinaryFuse8(int segmentCount, int segmentLength, long seed, byte[] fingerprints) {
+        this.segmentCount = segmentCount;
+        this.segmentLength = segmentLength;
+        this.segmentLengthMask = segmentLength - 1;
+        this.segmentCountLength = segmentCount * segmentLength;
+        this.arrayLength = (segmentCount + ARITY - 1) * segmentLength;
+        this.seed = seed;
+        this.fingerprints = fingerprints;
     }
 
 }

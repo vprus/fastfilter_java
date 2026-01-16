@@ -1,5 +1,7 @@
 package org.fastfilter.xor;
 
+import java.nio.ByteBuffer;
+
 import org.fastfilter.Filter;
 import org.fastfilter.utils.Hash;
 
@@ -141,6 +143,39 @@ public class Xor16 implements Filter {
 
     private int fingerprint(long hash) {
         return (int) (hash & ((1 << BITS_PER_FINGERPRINT) - 1));
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(fingerprints.length);
+        buffer.putLong(seed);
+        buffer.putInt(blockLength);
+        for (short value : fingerprints) {
+            buffer.putShort(value);
+        }
+    }
+
+    public static Xor16 readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int arrayLength = buffer.getInt();
+        long seed = buffer.getLong();
+        int blockLength = buffer.getInt();
+        short[] fingerprints = new short[arrayLength];
+        for (int i = 0; i < arrayLength; i++) {
+            fingerprints[i] = buffer.getShort();
+        }
+        return new Xor16(seed, blockLength, fingerprints);
+    }
+
+    private Xor16(long seed, int blockLength, short[] fingerprints) {
+        this.seed = seed;
+        this.blockLength = blockLength;
+        this.fingerprints = fingerprints;
+        this.bitCount = fingerprints.length * BITS_PER_FINGERPRINT;
     }
 
 }

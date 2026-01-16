@@ -1,5 +1,7 @@
 package org.fastfilter.bloom;
 
+import java.nio.ByteBuffer;
+
 import org.fastfilter.Filter;
 import org.fastfilter.utils.Hash;
 
@@ -63,6 +65,38 @@ public class BlockedBloom implements Filter {
         long m1 = (1L << hash) | (1L << (hash >> 6));
         long m2 = (1L << (hash >> 12)) | (1L << (hash >> 18));
         return ((m1 & a) == m1) && ((m2 & b) == m2);
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(buckets);
+        buffer.putLong(seed);
+        buffer.putInt(data.length);
+        for (long value : data) {
+            buffer.putLong(value);
+        }
+    }
+
+    public static BlockedBloom readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int buckets = buffer.getInt();
+        long seed = buffer.getLong();
+        int dataLength = buffer.getInt();
+        long[] data = new long[dataLength];
+        for (int i = 0; i < dataLength; i++) {
+            data[i] = buffer.getLong();
+        }
+        return new BlockedBloom(buckets, seed, data);
+    }
+
+    private BlockedBloom(int buckets, long seed, long[] data) {
+        this.buckets = buckets;
+        this.seed = seed;
+        this.data = data;
     }
 
 }

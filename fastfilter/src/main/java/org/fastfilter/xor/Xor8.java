@@ -1,6 +1,7 @@
 package org.fastfilter.xor;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 
 import org.fastfilter.Filter;
 import org.fastfilter.utils.Hash;
@@ -185,6 +186,37 @@ public class Xor8 implements Filter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(size);
+        buffer.putLong(seed);
+        buffer.putInt(arrayLength);
+        buffer.put(fingerprints);
+    }
+
+    public static Xor8 readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int size = buffer.getInt();
+        long seed = buffer.getLong();
+        int arrayLength = buffer.getInt();
+        byte[] fingerprints = new byte[arrayLength];
+        buffer.get(fingerprints);
+        return new Xor8(size, seed, arrayLength, fingerprints);
+    }
+
+    private Xor8(int size, long seed, int arrayLength, byte[] fingerprints) {
+        this.size = size;
+        this.seed = seed;
+        this.arrayLength = arrayLength;
+        this.bitCount = arrayLength * BITS_PER_FINGERPRINT;
+        this.blockLength = arrayLength / HASHES;
+        this.fingerprints = fingerprints;
     }
 
 }

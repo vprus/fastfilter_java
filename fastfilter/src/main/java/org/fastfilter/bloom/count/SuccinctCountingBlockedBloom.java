@@ -1,5 +1,7 @@
 package org.fastfilter.bloom.count;
 
+import java.nio.ByteBuffer;
+
 import org.fastfilter.Filter;
 import org.fastfilter.utils.Hash;
 
@@ -284,6 +286,12 @@ public class SuccinctCountingBlockedBloom implements Filter {
         int bitPos = Select.selectInLong(c, bitsBefore - 1);
         long y = ((c << (63 - bitPos)) << 1) | (1L << (63 - bitPos));
         return Long.numberOfLeadingZeros(y) + 1;
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        // TODO: Implement serialization for BitField
+        throw new UnsupportedOperationException("Serialization not yet implemented for SuccinctCountingBlockedBloom");
     }
 
 }

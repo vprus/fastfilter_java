@@ -1,5 +1,7 @@
 package org.fastfilter;
 
+import java.nio.ByteBuffer;
+
 /**
  * An approximate membership filter.
  */
@@ -63,6 +65,15 @@ public interface Filter {
      */
     default long cardinality() {
         return -1;
+    }
+
+    /**
+     * Write the filter to a ByteBuffer.
+     *
+     * @param buffer the ByteBuffer to write to
+     */
+    default void writeTo(ByteBuffer buffer) {
+        throw new UnsupportedOperationException();
     }
 
 }

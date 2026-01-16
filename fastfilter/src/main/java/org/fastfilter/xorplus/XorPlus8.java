@@ -1,6 +1,7 @@
 package org.fastfilter.xorplus;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 import org.fastfilter.Filter;
@@ -272,7 +273,15 @@ public class XorPlus8 implements Filter {
                 fingerprints[j++] = (byte) f;
             }
         }
-        bitCount = fingerprints.length * 8 + rank.getBitCount();
+        bitCount = calculateBitCount(fingerprints, rank);
+    }
+
+    /**
+     * Calculate the total bit count including fingerprints and rank data structure.
+     * Each fingerprint uses BITS_PER_FINGERPRINT bits.
+     */
+    private static int calculateBitCount(byte[] fingerprints, Rank9 rank) {
+        return fingerprints.length * BITS_PER_FINGERPRINT + rank.getBitCount();
     }
 
     /**
@@ -377,6 +386,43 @@ public class XorPlus8 implements Filter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(size);
+        buffer.putLong(seed);
+        buffer.putInt(fingerprints.length);
+        buffer.put(fingerprints);
+        rank.writeTo(buffer);
+    }
+
+    public static XorPlus8 readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int size = buffer.getInt();
+        int arrayLength = getArrayLength(size);
+        int blockLength = arrayLength / HASHES;
+        long seed = buffer.getLong();
+        int fingerprintLength = buffer.getInt();
+        byte[] fingerprints = new byte[fingerprintLength];
+        buffer.get(fingerprints);
+        Rank9 rank = Rank9.readFrom(buffer);
+        int bitCount = calculateBitCount(fingerprints, rank);
+        return new XorPlus8(size, arrayLength, blockLength, seed, fingerprints, bitCount, rank);
+    }
+
+    private XorPlus8(int size, int arrayLength, int blockLength, long seed, byte[] fingerprints, int bitCount, Rank9 rank) {
+        this.size = size;
+        this.arrayLength = arrayLength;
+        this.blockLength = blockLength;
+        this.seed = seed;
+        this.fingerprints = fingerprints;
+        this.bitCount = bitCount;
+        this.rank = rank;
     }
 
 

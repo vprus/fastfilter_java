@@ -124,6 +124,17 @@ public class Rank9 {
         }
     }
 
+    public void writeTo(java.nio.ByteBuffer buffer) {
+        buffer.putInt(bits.length);
+        for (long bit : bits) {
+            buffer.putLong(bit);
+        }
+        buffer.putInt(counts.length);
+        for (long count : counts) {
+            buffer.putLong(count);
+        }
+    }
+
     public Rank9(DataInputStream in) throws IOException {
         bits = new long[in.readInt()];
         for (int i = 0; i < bits.length; i++) {
@@ -133,6 +144,25 @@ public class Rank9 {
         for (int i = 0; i < counts.length; i++) {
             counts[i] = in.readLong();
         }
+    }
+
+    public static Rank9 readFrom(java.nio.ByteBuffer buffer) {
+        int bitsLength = buffer.getInt();
+        long[] bits = new long[bitsLength];
+        for (int i = 0; i < bitsLength; i++) {
+            bits[i] = buffer.getLong();
+        }
+        int countsLength = buffer.getInt();
+        long[] counts = new long[countsLength];
+        for (int i = 0; i < countsLength; i++) {
+            counts[i] = buffer.getLong();
+        }
+        return new Rank9(bits, counts);
+    }
+
+    private Rank9(long[] bits, long[] counts) {
+        this.bits = bits;
+        this.counts = counts;
     }
 
 }
