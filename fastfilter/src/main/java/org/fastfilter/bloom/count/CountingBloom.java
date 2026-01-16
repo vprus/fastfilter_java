@@ -1,5 +1,7 @@
 package org.fastfilter.bloom.count;
 
+import java.nio.ByteBuffer;
+
 import org.fastfilter.Filter;
 import org.fastfilter.utils.Hash;
 
@@ -110,6 +112,42 @@ public class CountingBloom implements Filter {
             sum += Long.bitCount(x);
         }
         return sum;
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(k);
+        buffer.putLong(bits);
+        buffer.putLong(seed);
+        buffer.putInt(arraySize);
+        for (long value : counts) {
+            buffer.putLong(value);
+        }
+    }
+
+    public static CountingBloom readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int k = buffer.getInt();
+        long bits = buffer.getLong();
+        long seed = buffer.getLong();
+        int arraySize = buffer.getInt();
+        long[] counts = new long[arraySize];
+        for (int i = 0; i < arraySize; i++) {
+            counts[i] = buffer.getLong();
+        }
+        return new CountingBloom(k, bits, seed, arraySize, counts);
+    }
+
+    private CountingBloom(int k, long bits, long seed, int arraySize, long[] counts) {
+        this.k = k;
+        this.bits = bits;
+        this.seed = seed;
+        this.arraySize = arraySize;
+        this.counts = counts;
     }
 
 }

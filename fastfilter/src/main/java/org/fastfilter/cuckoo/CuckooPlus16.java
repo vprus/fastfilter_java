@@ -1,5 +1,6 @@
 package org.fastfilter.cuckoo;
 
+import java.nio.ByteBuffer;
 import java.util.Random;
 
 import org.fastfilter.Filter;
@@ -179,6 +180,36 @@ public class CuckooPlus16 implements Filter {
 
     public long getBitCount() {
         return 16 * (bucketCount + 1);
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(bucketCount);
+        buffer.putLong(seed);
+        for (short value : data) {
+            buffer.putShort(value);
+        }
+    }
+
+    public static CuckooPlus16 readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int bucketCount = buffer.getInt();
+        long seed = buffer.getLong();
+        short[] data = new short[bucketCount + 2];
+        for (int i = 0; i < data.length; i++) {
+            data[i] = buffer.getShort();
+        }
+        return new CuckooPlus16(bucketCount, seed, data);
+    }
+
+    private CuckooPlus16(int bucketCount, long seed, short[] data) {
+        this.bucketCount = bucketCount;
+        this.seed = seed;
+        this.data = data;
     }
 
 }

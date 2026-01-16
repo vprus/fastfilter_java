@@ -1,5 +1,6 @@
 package org.fastfilter.xor;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.fastfilter.Filter;
@@ -259,6 +260,43 @@ public class XorBinaryFuse32 implements Filter {
 
     private int fingerprint(long hash) {
         return (int) (hash ^ (hash >>> 32));
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        buffer.put((byte) 1); // version
+        buffer.putInt(segmentCount);
+        buffer.putInt(segmentLength);
+        buffer.putLong(seed);
+        for (int value : fingerprints) {
+            buffer.putInt(value);
+        }
+    }
+
+    public static XorBinaryFuse32 readFrom(ByteBuffer buffer) {
+        byte version = buffer.get();
+        if (version != 1) {
+            throw new IllegalArgumentException("Unsupported version: " + version);
+        }
+        int segmentCount = buffer.getInt();
+        int segmentLength = buffer.getInt();
+        long seed = buffer.getLong();
+        int arrayLength = (segmentCount + ARITY - 1) * segmentLength;
+        int[] fingerprints = new int[arrayLength];
+        for (int i = 0; i < arrayLength; i++) {
+            fingerprints[i] = buffer.getInt();
+        }
+        return new XorBinaryFuse32(segmentCount, segmentLength, seed, fingerprints);
+    }
+
+    private XorBinaryFuse32(int segmentCount, int segmentLength, long seed, int[] fingerprints) {
+        this.segmentCount = segmentCount;
+        this.segmentLength = segmentLength;
+        this.segmentLengthMask = segmentLength - 1;
+        this.segmentCountLength = segmentCount * segmentLength;
+        this.arrayLength = (segmentCount + ARITY - 1) * segmentLength;
+        this.seed = seed;
+        this.fingerprints = fingerprints;
     }
 
 }

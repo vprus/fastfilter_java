@@ -1,5 +1,7 @@
 package org.fastfilter.gcs;
 
+import java.nio.ByteBuffer;
+
 import org.fastfilter.Filter;
 import org.fastfilter.utils.Hash;
 
@@ -101,6 +103,12 @@ public class GolombCompressedSet implements Filter {
             p += golombShift;
         }
         return false;
+    }
+
+    @Override
+    public void writeTo(ByteBuffer buffer) {
+        // TODO: Implement serialization for BitBuffer and MonotoneList
+        throw new UnsupportedOperationException("Serialization not yet implemented for GolombCompressedSet");
     }
 
 }
